@@ -14,12 +14,18 @@ use dotenvy::dotenv;
 use axum::response::IntoResponse;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
+use tracing_appender::rolling;
+use tracing_subscriber::fmt::writer::MakeWriterExt;
   
 #[tokio::main]
 async fn main() {
       dotenv().ok();
+      let info_file = rolling::daily("./logs", "info").with_max_level(tracing::Level::INFO);
+      
       tracing_subscriber::fmt()
         .with_target(false)
+        .with_writer(info_file)
+        .with_ansi(false)
         .compact()
         .init();
 
