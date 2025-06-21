@@ -2,7 +2,7 @@ use sha256::{digest};
 use axum::{
     http::StatusCode,
     extract,
-    extract::{Extension, Path},
+    extract::Path,
     routing::{get,post},
     Router,
     Json,
@@ -12,13 +12,32 @@ use libsql::{params, Connection, Database};
 use std::env;
 use dotenvy::dotenv;
 use axum::response::IntoResponse;
- 
+use tower_http::trace::{self, TraceLayer};
+use tracing::Level;
+  
 #[tokio::main]
 async fn main() {
-    let app = Router::new()
-            .route("/router/{hash}", get(router_to_link))
-            .route("/router", post(create_router));
+      dotenv().ok();
+      tracing_subscriber::fmt()
+        .with_target(false)
+        .compact()
+        .init();
 
+    let api_v1_routes = Router::new()
+         .route("/router/{hash}", get(router_to_link))
+         .route("/router", post(create_router));
+      
+    let app = Router::new()
+           .nest("/api/v1", api_v1_routes)
+           .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(trace::DefaultMakeSpan::new()
+                    .level(Level::INFO))
+                .on_response(trace::DefaultOnResponse::new()
+                    .level(Level::INFO)),
+
+            );
+  
     let conn = db_connection().await;
     let _ = conn
         .execute(
@@ -27,10 +46,9 @@ async fn main() {
         )
         .await;
 
-
-
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    tracing::info!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
 }
 
