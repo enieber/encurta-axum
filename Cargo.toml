@@ -5,9 +5,12 @@ edition = "2024"
 
 [dependencies]
 axum = "0.8.4"
+dioxus = "0.6.3"
+dioxus-ssr = "0.6.2"
 dotenvy = "0.15.7"
 libsql = "0.9.11"
 limbo = "0.0.22"
+reqwest = { version = "0.12.20", features = ["json"] }
 serde = { version = "1.0.219", features = ["derive"] }
 sha256 = "1.6.0"
 tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
@@ -15,3 +18,15 @@ tower-http = { version = "0.6.6", features = ["trace"] }
 tracing = "0.1.41"
 tracing-appender = "0.2.3"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+
+[profile]
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"
